@@ -1,7 +1,7 @@
 version: 2.1
 
 general:
-  build_dir: logService
+  build_dir: LogService
 
 orbs:
   maven: circleci/maven@1.1
