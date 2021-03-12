@@ -1,84 +1,142 @@
-# NanoSpring
+# Docker y AWS
 
 [![danielrincon-m](https://circleci.com/gh/danielrincon-m/AREP_LAB4.svg?style=svg)](https://app.circleci.com/pipelines/github/danielrincon-m/AREP_LAB4)
-[![Heroku](img/heroku_long.png)](https://nanospring.herokuapp.com/nspapp/register)
+<!-- [![Heroku](img/heroku_long.png)](https://nanospring.herokuapp.com/nspapp/register) -->
 
 ## Descripción ♨️
 
-NanoSpring es un framework web liviano que nos permite desplegar páginas web de manera sencilla y con muy pocas líneas de código,
-además nos brinda la posibilidad de ver cualquier tipo de archivo en el navegador gracias a su amplia base de datos de
-códigos MimeType. Logra esto gracias a las propiedades reflexivas de Java, en donde por medio de anotaciones podemos definir
-que función deseamos ejecutar bajo cierta petición.
+En este laboratorio desarrollaremos un proyecto web simple, en en cual cada uno de los módulos que lo componen estarán corriendo en contenedores de docker independientes en una máquina virtual AWS, sin embargo, estos módulos se podrán comunicar entre ellos a través de la red local. Los componentes del sistema se enumeran a continuación:
 
-### Prueba de concepto
+- Motor de bases de datos Mongodb corriendo en el puerto local 27017.
+- 3 Instancias del servicio LogService escuchando en los puertos locales 35001, 35002 y 35003 respectivamente.
+- Una instancia del servicio RoundRobin escuchando en el puerto público 8080.
 
-La prueba de concepto del Framework se divide en dos fases:
 
-#### Primera Fase
+### Implementación
 
-Esta fase trata de mostrar la capacidad del servidor web de devolver recursos estáticos de varios tipos al cliente, 
-para esto, a continuación daremos varios ejemplos de archivos estáticos alojados en el servidor.
+La implementación se divide en dos partes, desarrollo y creación de contenedores, y despliegue de los contenedores en AWS. Haremos un breve recorrido por ambas partes.
 
-- **Imagen / ico**: [Imagen en formato .ico](https://nanospring.herokuapp.com/favicon.ico)
-- **Imagen / png**: [Imagen en formato .png](https://nanospring.herokuapp.com/static/img/future.png)
-- **Script / JavaScript**: [Archivo de texto en formato .js](https://nanospring.herokuapp.com/static/js/get.js)
-- **Script / css**: [Archivo de texto en formato .css](https://nanospring.herokuapp.com/static/css/main.css)
+#### Desarrollo y creación de contenedores
 
-Una vez confirmamos que nuestro servidor web es capaz de enviar archivos de cualquier tipo al cliente y que este los puede
-interpretar de manera correcta, continuamos con la segunda fase, en donde realizamos una aplicación web funcional 
-utilizando nuestro Framework.
+Dos de las tres partes que componen el proyecto fueron desarrolladas por nosotros mismos, estas son [RoundRobin](/RoundRobin) y [LogService](/LogService), su código fuente puede ser encontrado en los enlaces de cada una de ellas, y su arquitectura en el documento de diseño.
 
-#### Segunda Fase
+Luego de crear con éxito las partes y probarlas localmente en los servidores SparkWeb de cada una de ellas, procedimos a encapsularlas en contenedores Docker como se muestra continuación.
 
-Nuestra aplicación web es un simple registro de usuarios, en al ingresar sus datos básicos (nombre, documento, dirección y teléfono),
-los mismos se almacenan en una base de datos PostgreSQL de manera asíncrona por medio de JavaScript. La aplicación consta de dos partes:
+Inicialmente, construimos los contenedores de manera local con los siguientes comandos:
 
-- Un formulario de inscripción de usuarios el cual se puede consultar [aquí.](https://nanospring.herokuapp.com/nspapp/register)
-- Una página web en donde se pueden consultar los usuarios registrados hasta el momento, la cual se puede consultar
-[aquí](https://nanospring.herokuapp.com/nspapp/get)
+![Build LogService](/img/build_logservice.png)
+![Build RoundRobin](/img/build_roundrobin.png)
 
-De esta forma finaliza nuestra prueba de concepto, todos los servicios web están corriendo sobre el mini framework "NanoSpring". Como pudimos
-observar ya se encuentra en una etapa bastante funcional, y está preparado para correr aplicaciones más complejas.
+Luego de esto, creamos dos repositorios en dockerhub, uno para cada una de nuestras imágenes, y las subimos con los siguientes comandos:
 
-### Cómo utilizar el programa
+Mapeamos los repositorios a nuestros contenedores locales
 
-Al abrir el [sitio web de registro](https://nanospring.herokuapp.com/nspapp/register) nos encontraremos con una pantalla 
-como esta:
+![Tag LogService](/img/tag_logservice.png)
+![Tag RoundRobin](/img/tag_roundrobin.png)
 
-![Pantalla Registro](img/PantallaRegistro.jpg)
+Subimos los contenedores a los repositorios
 
-✔️ Esta pantalla contiene un formulario en donde el usuario que se quiera registrar en la aplicación debe ingresar sus
-datos básicos: Nombre, Documento, Teléfono y Dirección.
+![Push LogService](img/push_logservice.png)
+![Push RoundRobin](img/push_roundrobin.png)
 
-✔️ Una vez ingresados los datos personales podremos registrarnos dándole click al botón de registrar 
-(si no llenamos todos los campos, no nos permitirá registrarnos).
+Ahora que tenemos los contenedores subidos en nuestro repositorio, vamos a crear un archivo docker compose para instalarlos de manera sencilla en otras máquinas, el código de este archivo luce así:
 
-✔️ Luego de un breve periodo de tiempo recibiremos una notificación, y nos habremos registrado exitosamente
-en la aplicación.
+``` YML
+version: '2'
 
---
+services:
+    round:
+        image: danielrincon/roundrobin:latest
+        container_name: roundrobin
+        ports:
+            - "8080:6000"
+        depends_on:
+            - "logservice1"
+            - "logservice2"
+            - "logservice3"
+            - "db"
+        
+    logservice1:
+        image: danielrincon/logservice:latest
+        container_name: logservice35001
+        ports:
+            - "35001:6000"
+        depends_on:
+            - "db"
 
-Luego de esto nos gustaría verificar si efectivamente quedamos registrados, para ello, podremos ir a la
-[página de consulta](https://nanospring.herokuapp.com/nspapp/get), en donde nos encontraremos una pantalla como esta:
+    logservice2:
+        image: danielrincon/logservice:latest
+        container_name: logservice35002
+        ports:
+            - "35002:6000"
+        depends_on:
+            - "db"
 
-![Pantalla Consulta](img/PantallaConsulta.jpg)
+    logservice3:
+        image: danielrincon/logservice:latest
+        container_name: logservice35003
+        ports:
+            - "35003:6000"
+        depends_on:
+            - "db"
 
-✔️ Se trata de una pantalla informativa en donde podremos ver todos los usuarios que se han registrado en la aplicación. 
+    db:
+        image: mongo:3.6.1
+        container_name: mongodb
+        ports:
+            - 27017:27017
+        command: mongod
 
-✔️ Si todo salió bien, deberías poder ver tu nombre en esta pantalla.
+volumes:
+    mongodb:
+    mongodb_config:
+```
 
-## Cómo obtener el proyecto 📥
+Como podemos observar tenemos una instancia de nuestro contenedor RoundRobin, el cuál hará el rol de servidor público y de balanceador de carga, tres instancias de nuestro contenedor LogService, los cuales se encargarán de escribir los logs en la base de datos, y una instancia de MongoDB que es nuestra base de datos no relacional.
 
-### Prerrequisitos
+Gracias a que **docker-compose** crea una red interna con un servicio DNS, podemos conectarnos entre contenedores por medio de sus propios nombres, un ejemplo de conexión a la base de datos corriendo en el contenedor llamado *mongodb* es el siguiente:
 
-Asegúrese de tener git instalado en su máquina, lo puede hacer desde la [página oficial][gitLink].
+![Conexión MongoDB](img/conn_mongodb.png)
+
+---
+
+#### Despliegue de contenedores en AWS
+
+Gracias a que subimos nuestro repositorio en Github, fué muy sencillo clonarlo en nuestra máquina virtual en AWS y ejecutar el *docker-compose* para instalar todos los contenedores. Inicialmente, instalamos el *docker-compose* con los siguiente comando:
+
+![Install docker-compose](/img/compose-inst.png)
+![Execute docker-compose](img/compose-exec.png)
+
+Luego de esto, clonamos nuestro repositorio de Github, nos cambiamos a la carpeta e instalamos nuestros contenedores por medio de *docker-compose* de la siguiente manera:
+
+![Deploy docker-compose](img/compose-deploy.png)
+
+Una vez los contenedores se encuentran desplegados y en ejecución, podemos observar el estado de la red interna por medio del siguiente comando, y arrojándonos el siguiente resultado:
+
+``` bash
+docker network inspect <Network name>
+```
+![Local Network](img/network.png)
+
+Por último, debemos abrir el puerto público de la máquina virtual, en nuestro caso el 8080, para que de esta forma sea accesible por cualquier persona.
+
+![Open Port](img/open_port.png)
+
+#### Resultado
+
+Vamos a observar que sucede al agregar un nuevo registro:
+
+![Register Before Add](img/reg_before.png)
+![Register After Add](img/reg_after.png)
+
+Como pudimos observar, se adicionó y se retornó correctamente el registro junto con los que se habían registrado anteriormente.
 
 ### Descarga del proyecto
 
 Clone el proyecto utilizando el siguiente comando:
 
 ```
-git clone https://github.com/danielrincon-m/AREP_LAB4.git
+git clone https://github.com/danielrincon-m/AREP_LAB5.git
 ```
 
 ## Correr las pruebas unitarias 🧪
@@ -91,7 +149,7 @@ la [página oficial.][mvnLink]
 ### Ejecución de pruebas
 
 Las pruebas pueden ser ejecutadas desde la sección de pruebas de su IDE o si tiene maven puede navegar a la carpeta
-principal del proyecto y ejecutar el comando
+principal de cada uno de los dos proyectos internos y ejecutar el comando
 
 ```
 mvn test
@@ -99,7 +157,7 @@ mvn test
 
 ## Documentación del código fuente 🌎
 
-La documentación del proyecto puede ser encontrada en la carpeta [docs](/docs).
+La documentación de los proyectos puede ser encontrada en las carpetas [LogService/docs](LogService/docs) y [RoundRobin/docs](RoundRobin/docs).
 
 También puede ser generada con Maven, clonando el proyecto y ejecutando el siguiente comando:
 
@@ -113,12 +171,13 @@ El documento de diseño del programa puede ser encontrado [aquí](Lab4_AREP.pdf)
 
 ## Herramientas utilizadas 🛠️
 
-* [IntelliJ IDE](https://www.jetbrains.com/es-es/idea/download/) - IDE de desarrollo
+* [Visual Studio Code](https://code.visualstudio.com/) - IDE de desarrollo
 * [Maven](https://maven.apache.org/) - Manejo de Dependencias
 * [JUnit](https://junit.org/junit4/) - Pruebas unitarias
 * [GitHub](https://github.com/) - Repositorio de código
-* [Mime-Types](https://github.com/jshttp/mime-types) - Herramienta de consulta de MimeTypes
-* [PostgreSQL](https://www.postgresql.org/) - Base de datos
+* [Docker](https://www.docker.com/) - Herramienta de encapsulamiento en contenedores
+* [MongoDB](https://www.mongodb.com/es) - Base de datos
+* [AWS](https://aws.amazon.com/es/) - Despliegue en la nube
 
 ## Autor 🧔
 

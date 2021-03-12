@@ -1,8 +1,5 @@
 version: 2.1
 
-general:
-  working_directory: ~/LogService
-
 orbs:
   maven: circleci/maven@1.1
 
