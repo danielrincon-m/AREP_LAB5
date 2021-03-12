@@ -1,10 +1,12 @@
 version: 2.1
 
+general:
+  build_dir: logService
+
 orbs:
   maven: circleci/maven@1.1
 
 workflows:
   maven_test:
-    working_directory: ~/AREP_LAB5/LogService
     jobs:
       - maven/test
