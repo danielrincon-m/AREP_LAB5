@@ -3,7 +3,7 @@
 [![danielrincon-m](https://circleci.com/gh/danielrincon-m/AREP_LAB4.svg?style=svg)](https://app.circleci.com/pipelines/github/danielrincon-m/AREP_LAB4)
 <!-- [![Heroku](img/heroku_long.png)](https://nanospring.herokuapp.com/nspapp/register) -->
 
-## Descripción ♨️
+## Descripción 📦
 
 En este laboratorio desarrollaremos un proyecto web simple, en en cual cada uno de los módulos que lo componen estarán corriendo en contenedores de docker independientes en una máquina virtual AWS, sin embargo, estos módulos se podrán comunicar entre ellos a través de la red local. Los componentes del sistema se enumeran a continuación:
 
@@ -118,7 +118,7 @@ docker network inspect <Network name>
 ```
 ![Local Network](img/network.png)
 
-Por último, debemos abrir el puerto público de la máquina virtual, en nuestro caso el 8080, para que de esta forma sea accesible por cualquier persona.
+Acá nos pudimos dar cuenta de que todos los contenedores se encuentran dentro de la misma red y se pueden comunicar entre ellos. Por último, debemos abrir el puerto público de la máquina virtual, en nuestro caso el 8080, para que de esta forma sea accesible por cualquier persona.
 
 ![Open Port](img/open_port.png)
 
