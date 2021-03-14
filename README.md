@@ -18,7 +18,7 @@ La implementación se divide en dos partes, desarrollo y creación de contenedor
 
 #### Desarrollo y creación de contenedores
 
-Dos de las tres partes que componen el proyecto fueron desarrolladas por nosotros mismos, estas son [RoundRobin](/RoundRobin) y [LogService](/LogService), su código fuente puede ser encontrado en los enlaces de cada una de ellas, y su arquitectura en el documento de diseño.
+Dos de las tres partes que componen el proyecto fueron desarrolladas por nosotros mismos, estas son [RoundRobin](/RoundRobin) y [LogService](/LogService), su código fuente puede ser encontrado en los enlaces de cada una de ellas, y su arquitectura en el [documento de diseño](Lab5_AREP.pdf).
 
 Luego de crear con éxito las partes y probarlas localmente en los servidores SparkWeb de cada una de ellas, procedimos a encapsularlas en contenedores Docker como se muestra continuación.
 
@@ -167,7 +167,7 @@ mvn javadoc:javadoc
 
 ## Documento de diseño 📄
 
-El documento de diseño del programa puede ser encontrado [aquí](Lab4_AREP.pdf).
+El documento de diseño del programa puede ser encontrado [aquí](Lab5_AREP.pdf).
 
 ## Herramientas utilizadas 🛠️
 
